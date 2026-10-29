@@ -1,0 +1,955 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduGrowth · Personal Academic Performance & Growth Tracker</title>
+  <meta name="description" content="Personal academic performance tracking, diagnostic marksheet generation, and subject growth analysis system.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Full-Screen Glassmorphic Authentication & Login Portal -->
+  <div id="auth-portal-overlay" class="auth-portal-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-emblem">✦</div>
+        <h2 class="auth-title">Student Portal Login</h2>
+        <p class="auth-subtitle">Sign in to evaluate semester marks, SGPA & campus placement status</p>
+        <div class="auth-tabs-nav">
+          <button type="button" id="tab-auth-login" class="auth-tab-btn active">Sign In</button>
+          <button type="button" id="tab-auth-register" class="auth-tab-btn">Register New Student</button>
+        </div>
+      </div>
+
+      <div class="auth-body">
+        <div id="auth-alert" class="auth-alert-box"></div>
+
+        <!-- Sign In Form -->
+        <form id="form-auth-login" class="auth-form">
+          <div class="auth-field">
+            <label for="login-username">Username or Roll Number</label>
+            <input id="login-username" class="auth-input" type="text" placeholder="e.g. aarav or STU-2026" required autofocus autocomplete="username">
+          </div>
+          <div class="auth-field">
+            <label for="login-password">Password</label>
+            <input id="login-password" class="auth-input" type="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+          <!-- Current Semester Selection -->
+          <div class="auth-field auth-semester-field">
+            <label for="login-current-semester">
+              <span>&#x1F4C5;</span> Which Semester Are You Currently In?
+              <span class="auth-sem-hint">Portal will show placement score only up to this semester</span>
+            </label>
+            <select id="login-current-semester" class="auth-input auth-sem-select">
+              <option value="1">Semester 1 &middot; 1st Year (Jan&ndash;May)</option>
+              <option value="2">Semester 2 &middot; 1st Year (Aug&ndash;Dec)</option>
+              <option value="3">Semester 3 &middot; 2nd Year (Jan&ndash;May)</option>
+              <option value="4">Semester 4 &middot; 2nd Year (Aug&ndash;Dec)</option>
+              <option value="5" selected>Semester 5 &middot; 3rd Year (Jan&ndash;May)</option>
+              <option value="6">Semester 6 &middot; 3rd Year (Aug&ndash;Dec)</option>
+              <option value="7">Semester 7 &middot; Final Year (Jan&ndash;May)</option>
+              <option value="8">Semester 8 &middot; Final Year (Aug&ndash;Dec)</option>
+            </select>
+            <div class="auth-sem-note">&#x1F512; Future semesters will be shown as <strong>Upcoming</strong> and locked for editing</div>
+          </div>
+
+          <button type="submit" id="btn-submit-login" class="btn-primary btn-block" style="padding: 0.8rem; font-size: 0.92rem; justify-content: center;">
+            <span>🚀</span> Sign In & Launch Portal
+          </button>
+
+          <!-- Quick One-Click Demo Accounts -->
+          <div class="demo-accounts-box">
+            <label>⚡ Quick One-Click Demo Accounts</label>
+            <div class="demo-pills-row">
+              <button type="button" class="demo-pill-btn" data-demo-user="aarav" data-demo-pass="password123">
+                <div>
+                  <div class="d-name">Aarav Sharma (STU-2026)</div>
+                  <div class="d-meta">CGPA 9.20 · 0 Backlogs</div>
+                </div>
+                <span class="d-badge green">🟢 Green Light</span>
+              </button>
+              <button type="button" class="demo-pill-btn" data-demo-user="priya" data-demo-pass="password123">
+                <div>
+                  <div class="d-name">Priya Patel (STU-2027)</div>
+                  <div class="d-meta">CGPA 6.40 · Borderline</div>
+                </div>
+                <span class="d-badge yellow">🟡 Caution</span>
+              </button>
+              <button type="button" class="demo-pill-btn" data-demo-user="rohit" data-demo-pass="password123">
+                <div>
+                  <div class="d-name">Rohit Verma (STU-2028)</div>
+                  <div class="d-meta">CGPA 5.55 · 3 Arrears</div>
+                </div>
+                <span class="d-badge red">🔴 Red Light</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Registration Form -->
+        <form id="form-auth-register" class="auth-form" style="display: none;">
+          <div class="auth-field">
+            <label for="reg-fullname">Full Name</label>
+            <input id="reg-fullname" class="auth-input" type="text" placeholder="e.g. Vikram Singh" required>
+          </div>
+          <div class="input-row" style="margin-bottom: 0;">
+            <div class="auth-field">
+              <label for="reg-rollno">Roll Number / Student ID</label>
+              <input id="reg-rollno" class="auth-input" type="text" placeholder="e.g. STU-2030" required>
+            </div>
+            <div class="auth-field">
+              <label for="reg-username">Username</label>
+              <input id="reg-username" class="auth-input" type="text" placeholder="e.g. vikram" required autocomplete="username">
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="reg-password">Password</label>
+            <input id="reg-password" class="auth-input" type="password" placeholder="At least 4 characters" minlength="4" required autocomplete="new-password">
+          </div>
+          <div class="auth-field">
+            <label for="reg-program">Degree Program</label>
+            <input id="reg-program" class="auth-input" type="text" value="B.Tech Computer Science & Engineering" required>
+          </div>
+          <!-- Current Semester for Registration -->
+          <div class="auth-field auth-semester-field">
+            <label for="reg-current-semester">
+              <span>&#x1F4C5;</span> Current Semester
+              <span class="auth-sem-hint">Sets your active semester in the portal</span>
+            </label>
+            <select id="reg-current-semester" class="auth-input auth-sem-select">
+              <option value="1">Semester 1 &middot; 1st Year (Jan&ndash;May)</option>
+              <option value="2">Semester 2 &middot; 1st Year (Aug&ndash;Dec)</option>
+              <option value="3">Semester 3 &middot; 2nd Year (Jan&ndash;May)</option>
+              <option value="4">Semester 4 &middot; 2nd Year (Aug&ndash;Dec)</option>
+              <option value="5" selected>Semester 5 &middot; 3rd Year (Jan&ndash;May)</option>
+              <option value="6">Semester 6 &middot; 3rd Year (Aug&ndash;Dec)</option>
+              <option value="7">Semester 7 &middot; Final Year (Jan&ndash;May)</option>
+              <option value="8">Semester 8 &middot; Final Year (Aug&ndash;Dec)</option>
+            </select>
+            <div class="auth-sem-note">&#x1F512; Semesters beyond your current will be locked as <strong>Upcoming</strong></div>
+          </div>
+
+          <button type="submit" id="btn-submit-register" class="btn-primary btn-block" style="padding: 0.8rem; font-size: 0.92rem; justify-content: center;">
+            <span>✨</span> Create Account & Enter Marks
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Header Navigation -->
+  <header class="header">
+    <div class="brand-container">
+      <div class="brand-icon">✦</div>
+      <div class="brand-text">
+        <h1>EduMetrics AI</h1>
+        <p>All-Semesters CGPA & Campus Placement Evaluation</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div id="api-status-badge" class="api-badge" title="Real-time backend API connection status">
+        <span class="pulse-dot"></span>
+        <span>API Connected</span>
+        <span id="api-latency-text" style="opacity: 0.75; font-family: var(--font-mono); font-size: 0.72rem;">10ms</span>
+      </div>
+      <a href="/docs" target="_blank" class="btn-ghost" title="Open Interactive FastAPI Swagger Documentation">
+        <span>📖</span> Swagger Docs
+      </a>
+      <button id="btn-open-enter-marks" class="btn-ghost" title="View or edit active semester marksheet">
+        <span>📜</span> Consolidated Transcript
+      </button>
+      
+      <!-- Single Student Profile Identification Badge -->
+      <div class="user-profile-badge" title="Active Student Profile">
+        <span>👤</span>
+        <span id="header-student-name">Aarav Sharma</span>
+        <span class="badge-pill" id="header-student-id">STU-2026 · B.Tech CSE</span>
+      </div>
+
+      <!-- Logout Button -->
+      <button id="btn-logout" class="btn-logout" title="Sign out of student account">
+        <span>🚪</span> Sign Out
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+
+    <!-- Top Bento Stats Ribbon (All-Semesters CGPA & Placement KPI Summary) -->
+    <section class="stats-ribbon" aria-label="All-Semesters Academic & Placement KPI Summary">
+      <div class="stat-card" id="card-stat-cohort-avg" role="button" tabindex="0" data-target="tab-sandbox" title="Click to view all semesters evaluation and marks calculator">
+        <div class="stat-info">
+          <div class="stat-label">Average CGPA (All Semesters)</div>
+          <div id="stat-cohort-avg" class="stat-value">9.20 / 10.0</div>
+          <div class="stat-sub">Cumulative across 8 Semesters <span class="stat-click-hint">Evaluate Marks →</span></div>
+        </div>
+        <div class="stat-icon primary">🎓</div>
+      </div>
+
+      <div class="stat-card" id="card-stat-pass-rate" role="button" tabindex="0" data-target="tab-sandbox" title="Click to view campus placement signal and company eligibility">
+        <div class="stat-info">
+          <div class="stat-label">Campus Placement Signal</div>
+          <div id="stat-pass-rate" class="stat-value" style="color: #059669;">🟢 ELIGIBLE</div>
+          <div id="stat-pass-sub" class="stat-sub">Green Light · Cleared for Drives <span class="stat-click-hint">View Signal →</span></div>
+        </div>
+        <div class="stat-icon success">🚦</div>
+      </div>
+
+      <div class="stat-card" id="card-stat-at-risk" role="button" tabindex="0" data-target="tab-records" title="Click to view arrears / backlogs record">
+        <div class="stat-info">
+          <div class="stat-label">Active Backlogs</div>
+          <div id="stat-at-risk" class="stat-value">0 Backlogs</div>
+          <div class="stat-sub">Clean Academic Sheet <span class="stat-click-hint">View Arrears →</span></div>
+        </div>
+        <div class="stat-icon warning">✅</div>
+      </div>
+
+      <div class="stat-card" id="card-stat-total-students" role="button" tabindex="0" data-target="tab-growth" title="Click to view all-semesters progression curve">
+        <div class="stat-info">
+          <div class="stat-label">Semesters Evaluated</div>
+          <div id="stat-total-students" class="stat-value">8 of 8 Semesters</div>
+          <div class="stat-sub">160 Total Credits Earned <span class="stat-click-hint">View SGPA Curve →</span></div>
+        </div>
+        <div class="stat-icon primary">📚</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs Bar -->
+    <nav class="tabs-nav" aria-label="Dashboard Views">
+      <button class="tab-btn active" data-target="tab-sandbox">
+        <span>🚦</span> Placement Light & Semester Marks
+      </button>
+      <button class="tab-btn" data-target="tab-growth">
+        <span>📈</span> SGPA Curve & Semesters Progress
+      </button>
+      <button class="tab-btn" data-target="tab-records">
+        <span>📜</span> 8-Semester Transcript Ledger
+      </button>
+      <button class="tab-btn" data-target="tab-console">
+        <span>🔌</span> API Live Console
+      </button>
+    </nav>
+
+    <!-- TAB 1: Placement Light & Semester Marks Evaluation -->
+    <section id="tab-sandbox" class="tab-content active">
+
+      <!-- Prominent Campus Placement Traffic Light Console -->
+      <div class="placement-hero-card" id="placement-hero-container">
+        <!-- 3-Lamp Hardware Traffic Light -->
+        <div class="traffic-light-housing" aria-label="Placement Signal Traffic Light">
+          <div id="lamp-red" class="traffic-lamp lamp-red" title="RED LIGHT: Ineligible for Placements (CGPA < 6.0 or Active Backlogs)">
+            <span style="font-size: 0.62rem; font-weight: 900; color: #fff; opacity: 0.9;">RED</span>
+          </div>
+          <div id="lamp-yellow" class="traffic-lamp lamp-yellow" title="YELLOW LIGHT: Caution / Conditional Eligibility (CGPA 6.0 - 6.99)">
+            <span style="font-size: 0.62rem; font-weight: 900; color: #fff; opacity: 0.9;">YEL</span>
+          </div>
+          <div id="lamp-green" class="traffic-lamp lamp-green active" title="GREEN LIGHT: Fully Eligible for Campus Placements (CGPA >= 7.0 & 0 Backlogs)">
+            <span style="font-size: 0.62rem; font-weight: 900; color: #fff; opacity: 0.9;">GRN</span>
+          </div>
+        </div>
+
+        <!-- Placement Verdict Details -->
+        <div class="placement-details-col">
+          <div id="placement-verdict-badge" class="placement-badge-banner green">
+            <span id="placement-signal-icon" class="signal-icon">🟢</span>
+            <span id="placement-verdict-text">YES · ELIGIBLE FOR CAMPUS PLACEMENTS</span>
+          </div>
+          <h2 id="placement-headline" class="placement-headline-text">
+            Candidate Cleared for Campus Placements with Honors
+          </h2>
+          <p id="placement-summary" class="placement-summary-text">
+            Student maintains an exemplary academic profile with an Average CGPA of 9.20/10.0 and 0 active backlogs across all 8 semesters. Fully eligible for Tier-1 Product Companies, Core Engineering R&D, and Global IT Tech roles.
+          </p>
+        </div>
+
+        <!-- Placement KPIs -->
+        <div class="placement-kpis-box">
+          <div class="placement-kpi-item">
+            <span class="lbl">Cumulative Avg CGPA</span>
+            <span id="placement-cgpa-val" class="val">9.20</span>
+            <span class="denom">/ 10.0</span>
+          </div>
+          <div class="placement-kpi-item" style="border-top: 1px solid var(--border-subtle); padding-top: 0.45rem;">
+            <span class="lbl">Active Backlogs</span>
+            <span id="placement-backlogs-val" class="val" style="color: #059669; font-size: 1.25rem;">0</span>
+          </div>
+          <div class="placement-kpi-item" style="border-top: 1px solid var(--border-subtle); padding-top: 0.45rem;">
+            <span class="lbl">Readiness Score</span>
+            <span id="placement-readiness-val" class="val" style="color: #4f46e5; font-size: 1.25rem;">96.6%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sandbox-layout">
+        
+        <!-- Left Column: Semester Selection & Subject Marks Input -->
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title"><span>📝</span> Evaluate Marks for All Semesters</h2>
+              <p class="panel-subtitle">Select any semester (1 to 8), adjust subject marks to observe individual SGPA and cumulative CGPA impact</p>
+            </div>
+          </div>
+
+          <!-- Quick Test Presets (Green, Yellow, Red Placement Lights) -->
+          <div class="preset-selector">
+            <label>One-Click Placement Benchmarks</label>
+            <div class="preset-pills">
+              <button type="button" class="preset-pill active" data-preset="green" title="High CGPA 9.75 with 0 backlogs">🟢 Eligible (Green Light)</button>
+              <button type="button" class="preset-pill" data-preset="yellow" title="Borderline CGPA 6.40 with 0 backlogs">🟡 Caution (Yellow Light)</button>
+              <button type="button" class="preset-pill" data-preset="red" title="Low CGPA 5.55 with Active Backlogs">🔴 Ineligible (Red Light)</button>
+              <button type="button" class="preset-pill" data-preset="reset" title="Reset to standard baseline marks">🔄 Reset All</button>
+            </div>
+          </div>
+
+          <!-- Single Student Profile Banner -->
+          <div class="student-profile-banner">
+            <div class="sp-avatar">🎓</div>
+            <div class="sp-details">
+              <div class="sp-title"><strong id="sp-student-name">Aarav Sharma</strong> · <span id="sp-program">B.Tech Computer Science & Engineering</span></div>
+              <div class="sp-sub">Roll No: <strong>STU-2026</strong> &nbsp;•&nbsp; Batch: <strong>2022–2026</strong> &nbsp;•&nbsp; Program: <strong>8 Semesters (160 Credits)</strong></div>
+            </div>
+            <span class="sp-badge">Active Scholar</span>
+          </div>
+
+          <!-- Semester Selector Ribbon (Sem 1 to Sem 8) -->
+          <div class="semester-nav-wrapper">
+            <div class="semester-nav-header">
+              <label><span>📚</span> Select Semester to View / Modify Marks:</label>
+              <span id="semester-count-badge" class="badge-pill">8 Semesters</span>
+            </div>
+            <div id="semester-pills-container" class="semester-pills-row">
+              <!-- Dynamically populated from all 8 semesters data -->
+            </div>
+          </div>
+
+          <form id="sandbox-form" class="form-section">
+            <input id="input-name" type="hidden" value="Aarav Sharma">
+            <input id="input-id" type="hidden" value="STU-2026">
+
+            <!-- Active Semester Subject Marks Section -->
+            <div class="subject-marks-panel">
+              <div class="marks-panel-header">
+                <div>
+                  <label id="active-sem-heading" style="font-weight: 800; color: #4338ca; font-size: 0.95rem;">
+                    <span>📐</span> Semester 1 Subjects (10-Point Scale)
+                  </label>
+                  <div style="font-size: 0.76rem; color: var(--text-muted);">Adjust marks (0-100) to recalculate SGPA & placement light</div>
+                </div>
+                <div class="marks-live-badge">
+                  Semester SGPA: <strong id="active-sem-sgpa-badge">9.00 / 10.0</strong>
+                </div>
+              </div>
+
+              <!-- Dynamic Subject Marks Rows Container -->
+              <div id="semester-subjects-container" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem;">
+                <!-- Populated dynamically via JS -->
+              </div>
+            </div>
+
+            <!-- Optional Habits / Telemetry Context -->
+            <details style="margin-top: 0.6rem; padding: 0.6rem 0.9rem; background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: 12px;">
+              <summary style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); cursor: pointer;">
+                ⚙️ Attendance & Study Profile (For AI Sensitivity Inference)
+              </summary>
+              <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.8rem;">
+                <div class="form-group">
+                  <label for="slider-attendance">
+                    <span>Class Attendance Rate (%)</span>
+                    <span id="badge-attendance" class="val-badge">94%</span>
+                  </label>
+                  <div class="slider-container">
+                    <input id="slider-attendance" type="range" min="40" max="100" step="1" value="94">
+                    <input id="num-attendance" class="slider-val-input" type="number" min="40" max="100" step="1" value="94">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="slider-hours">
+                    <span>Weekly Self-Study Time (Hours)</span>
+                    <span id="badge-hours" class="val-badge">14 hrs</span>
+                  </label>
+                  <div class="slider-container">
+                    <input id="slider-hours" type="range" min="0" max="35" step="0.5" value="14">
+                    <input id="num-hours" class="slider-val-input" type="number" min="0" max="35" step="0.5" value="14">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="slider-sleep">
+                    <span>Average Sleep per Night (Hours)</span>
+                    <span id="badge-sleep" class="val-badge">8.0 hrs</span>
+                  </label>
+                  <div class="slider-container">
+                    <input id="slider-sleep" type="range" min="4" max="10" step="0.5" value="8.0">
+                    <input id="num-sleep" class="slider-val-input" type="number" min="4" max="10" step="0.5" value="8.0">
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <div class="form-actions" style="margin-top: 1.1rem;">
+              <button id="btn-run-analysis" type="submit" class="btn-primary btn-block">
+                <span>⚡</span> Recalculate SGPA & Placement Verdict
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right Column: Individual Semester SGPA & Company Tiers Breakdown -->
+        <div class="results-wrapper">
+
+          <!-- Selected Semester SGPA Result Card -->
+          <div class="score-hero-card">
+            <!-- Radial Score Gauge -->
+            <div class="score-gauge-box">
+              <svg class="gauge-svg" viewBox="0 0 120 120">
+                <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+                <circle id="gauge-circle-fill" class="gauge-fill" cx="60" cy="60" r="50" stroke-dasharray="0 314.16"></circle>
+              </svg>
+              <div class="gauge-center-text">
+                <span id="res-score-val" class="gauge-score-num">9.00</span>
+                <span class="gauge-score-denom" style="font-size: 0.8rem;">SGPA</span>
+              </div>
+            </div>
+
+            <!-- Active Semester Info & Result Badge -->
+            <div class="score-details">
+              <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                <h2 id="res-student-name">Semester 1 Evaluation</h2>
+                <span id="res-final-result-badge" class="result-badge-pill pass">PASSED</span>
+              </div>
+              <div class="student-meta-sub">
+                <span id="res-student-id">Active Semester: Sem 1</span>
+                <span>•</span>
+                <span id="res-academic-status" style="color: #4338ca; font-weight: 700;">Outstanding Concept Mastery</span>
+              </div>
+              <span id="res-risk-badge" class="risk-badge-large" style="background: #eef2ff; color: #4338ca; border-color: #818cf8;">Semester Cleared</span>
+            </div>
+
+            <!-- 10-Point SGPA Box -->
+            <div class="grade-box">
+              <span class="grade-label">Semester SGPA</span>
+              <span id="res-grade-letter" class="grade-val" style="font-size: 1.6rem;">9.00</span>
+              <span id="res-gpa-val" style="font-family: var(--font-mono); font-size: 0.8rem; color: #0284c7; font-weight: 700;">Out of 10.0</span>
+            </div>
+          </div>
+
+          <!-- Quick Action Toolbar -->
+          <div class="result-toolbar">
+            <div class="result-stat-pill">
+              <span>Semester Marks:</span>
+              <strong id="res-total-marks">423 / 500</strong>
+            </div>
+            <div class="result-stat-pill">
+              <span>Top Subject:</span>
+              <strong id="res-top-subject" style="color: #4338ca;">Programming in C (90)</strong>
+            </div>
+            <div class="result-actions-btns">
+              <button id="btn-view-current-report" type="button" class="btn-primary" style="padding: 0.45rem 0.95rem; font-size: 0.82rem;">
+                <span>📄</span> Consolidated Grade Sheet
+              </button>
+            </div>
+          </div>
+
+          <!-- Company Eligibility Tiers Matrix -->
+          <div class="glass-panel" style="padding: 1.3rem;">
+            <div class="panel-header" style="margin-bottom: 0.6rem;">
+              <div>
+                <h3 class="panel-title" style="font-size: 1.05rem;">
+                  <span>🏢</span> Placement Company Tiers Eligibility
+                </h3>
+                <p class="panel-subtitle">Based on Cumulative Average CGPA and 0 Active Backlogs requirement</p>
+              </div>
+            </div>
+
+            <div class="company-tiers-row">
+              <!-- Tier 1: Dream Companies -->
+              <div class="company-tier-card" id="card-tier-1">
+                <div class="tier-header">
+                  <span class="tier-title">🌟 Tier 1 · Dream Tech</span>
+                  <span id="badge-tier-1" class="tier-badge unlocked">UNLOCKED</span>
+                </div>
+                <div class="tier-criterion">Cutoff: CGPA ≥ 8.0 & 0 Arrears</div>
+                <div class="tier-companies">Google, Microsoft, Amazon, Atlassian, Adobe, Oracle (15–45+ LPA)</div>
+              </div>
+
+              <!-- Tier 2: Core Engineering -->
+              <div class="company-tier-card" id="card-tier-2">
+                <div class="tier-header">
+                  <span class="tier-title">🚀 Tier 2 · Core & Tech</span>
+                  <span id="badge-tier-2" class="tier-badge unlocked">UNLOCKED</span>
+                </div>
+                <div class="tier-criterion">Cutoff: CGPA ≥ 7.0 & 0 Arrears</div>
+                <div class="tier-companies">Samsung, Cisco, Intel, Qualcomm, Dell, Bosch, L&T (8–15 LPA)</div>
+              </div>
+
+              <!-- Tier 3: Mass Recruiters -->
+              <div class="company-tier-card" id="card-tier-3">
+                <div class="tier-header">
+                  <span class="tier-title">💼 Tier 3 · IT Consulting</span>
+                  <span id="badge-tier-3" class="tier-badge unlocked">UNLOCKED</span>
+                </div>
+                <div class="tier-criterion">Cutoff: CGPA ≥ 6.0 & Max 1 Arrear</div>
+                <div class="tier-companies">TCS, Infosys, Wipro, Cognizant, Accenture, Capgemini (4–7 LPA)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <!-- Groq AI Career & Placement Intelligence Panel           -->
+          <!-- ═══════════════════════════════════════════════════════════ -->
+          <div class="glass-panel groq-ai-panel" id="groq-ai-panel">
+            <div class="panel-header" style="margin-bottom: 1rem;">
+              <div>
+                <h3 class="panel-title" style="font-size: 1.05rem;">
+                  <span>🤖</span> AI Career & Placement Intelligence
+                  <span class="groq-model-badge">openai/gpt-oss-120b · Groq</span>
+                </h3>
+                <p class="panel-subtitle">Enter your current semester, target role and skills — AI will analyze your readiness and give a personalised roadmap</p>
+              </div>
+            </div>
+
+            <!-- Input Form -->
+            <div class="groq-input-grid">
+              <!-- Current Semester -->
+              <div class="groq-field-group">
+                <label class="groq-label" for="groq-current-semester">
+                  <span>📅</span> Current Semester
+                </label>
+                <select id="groq-current-semester" class="groq-select">
+                  <option value="1">Semester 1 (1st Year, Sem 1)</option>
+                  <option value="2">Semester 2 (1st Year, Sem 2)</option>
+                  <option value="3">Semester 3 (2nd Year, Sem 1)</option>
+                  <option value="4">Semester 4 (2nd Year, Sem 2)</option>
+                  <option value="5" selected>Semester 5 (3rd Year, Sem 1)</option>
+                  <option value="6">Semester 6 (3rd Year, Sem 2)</option>
+                  <option value="7">Semester 7 (Final Year, Sem 1)</option>
+                  <option value="8">Semester 8 (Final Year, Sem 2)</option>
+                </select>
+              </div>
+
+              <!-- Desired Role -->
+              <div class="groq-field-group">
+                <label class="groq-label" for="groq-desired-role">
+                  <span>🎯</span> Target Career Role
+                </label>
+                <input id="groq-desired-role" class="groq-input" type="text"
+                  placeholder="e.g. Full Stack Developer, Data Scientist, ML Engineer, DevOps..."
+                  value="Full Stack Developer">
+              </div>
+            </div>
+
+            <!-- Skills Input -->
+            <div class="groq-field-group" style="margin-top: 0.9rem;">
+              <label class="groq-label" for="groq-skills-input">
+                <span>🛠️</span> Your Current Skills
+                <span style="font-weight: 400; color: var(--text-muted); font-size: 0.76rem;">(comma-separated)</span>
+              </label>
+              <textarea id="groq-skills-input" class="groq-textarea"
+                placeholder="e.g. Python, React, Node.js, SQL, Docker, Git, Machine Learning, DSA..."
+                rows="2">Python, JavaScript, React, Node.js, SQL, Git</textarea>
+            </div>
+
+            <!-- Run Button -->
+            <button id="btn-run-groq-analysis" class="groq-run-btn" type="button">
+              <span id="groq-btn-icon">🚀</span>
+              <span id="groq-btn-text">Run AI Analysis</span>
+              <span id="groq-btn-spinner" class="groq-spinner" style="display:none;"></span>
+            </button>
+
+            <!-- Results Container (hidden until analysis runs) -->
+            <div id="groq-analysis-results" style="display:none; margin-top: 1.4rem;">
+
+              <!-- Confidence Score & On-Track Badge Row -->
+              <div class="groq-results-top-row">
+                <!-- Confidence Score -->
+                <div class="groq-confidence-card">
+                  <div class="groq-confidence-label">AI Confidence Score</div>
+                  <div class="groq-confidence-number" id="groq-confidence-num">85%</div>
+                  <div class="groq-confidence-bar-bg">
+                    <div class="groq-confidence-bar-fill" id="groq-confidence-bar" style="width: 85%;"></div>
+                  </div>
+                </div>
+
+                <!-- On Track Status -->
+                <div class="groq-ontrack-card">
+                  <div class="groq-ontrack-label">Semester Pacing</div>
+                  <div id="groq-ontrack-badge" class="groq-ontrack-badge ontrack">ON TRACK</div>
+                  <div id="groq-role-fit" class="groq-role-fit-text">Role Fit: Strong Match</div>
+                </div>
+
+                <!-- Skill Match % -->
+                <div class="groq-skillmatch-card">
+                  <div class="groq-confidence-label">Skill Match</div>
+                  <div class="groq-confidence-number" id="groq-skillmatch-num">72%</div>
+                  <div class="groq-confidence-bar-bg">
+                    <div class="groq-confidence-bar-fill" id="groq-skillmatch-bar" style="width: 72%; background: #10b981;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Matching Skills -->
+              <div class="groq-section" id="groq-matching-skills-section">
+                <div class="groq-section-title">✅ Matching Skills</div>
+                <div id="groq-matching-skills" class="groq-skill-tags"></div>
+              </div>
+
+              <!-- Missing Skills -->
+              <div class="groq-section" id="groq-missing-skills-section">
+                <div class="groq-section-title">⚠️ Missing Critical Skills</div>
+                <div id="groq-missing-skills" class="groq-skill-tags"></div>
+              </div>
+
+              <!-- Semester Roadmap -->
+              <div class="groq-section">
+                <div class="groq-section-title">🗺️ Semester Milestone Roadmap</div>
+                <ol id="groq-roadmap-list" class="groq-roadmap-list"></ol>
+              </div>
+
+              <!-- Interview Readiness -->
+              <div class="groq-section">
+                <div class="groq-section-title">🎤 Interview Readiness</div>
+                <div id="groq-interview-readiness" class="groq-readiness-text"></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Placement Action Plan & Strategic Recommendations -->
+          <div class="glass-panel">
+            <h3 class="panel-title" style="font-size: 1.05rem;">
+              <span>🧭</span> Placement Action Plan & Verification Reasons
+            </h3>
+            <div id="res-drivers-container" class="drivers-container" style="margin-top: 0.75rem;">
+              <!-- Dynamically populated with placement reasons -->
+            </div>
+
+            <h3 class="panel-title" style="font-size: 1.05rem; margin-top: 1.3rem;">
+              <span>💡</span> Recommended Steps for Placement Drives
+            </h3>
+            <ul id="res-rec-container" class="recommendations-list">
+              <!-- Dynamically populated with actionable steps -->
+            </ul>
+          </div>
+
+          <!-- Competency Radar & Subject Mastery Grid -->
+          <div class="breakdown-grid">
+            <div class="glass-panel" style="padding: 1.3rem;">
+              <h3 class="panel-title" style="font-size: 1rem; margin-bottom: 0.8rem;">
+                <span>🎯</span> Multi-Dimensional Competency
+              </h3>
+              <div class="radar-chart-container">
+                <canvas id="chart-student-radar"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 1.3rem;">
+              <h3 class="panel-title" style="font-size: 1rem; margin-bottom: 0.8rem;">
+                <span>📚</span> Active Semester Subject Mastery
+              </h3>
+              <div id="res-subjects-container" class="subject-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: SGPA Curve & Semester-by-Semester Progress -->
+    <section id="tab-growth" class="tab-content">
+      <div class="cohort-charts-grid">
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title"><span>📈</span> All 8 Semesters SGPA Progression Curve</h3>
+              <p class="panel-subtitle">Individual semester SGPA trajectory with placement eligibility threshold boundaries</p>
+            </div>
+            <span id="tab2-avg-cgpa-badge" class="growth-velocity-badge">Avg CGPA: 9.20 / 10.0</span>
+          </div>
+          <div class="chart-box" style="margin-top: 1rem;">
+            <canvas id="chart-growth-line"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title"><span>📊</span> Subject Benchmarking Breakdown</h3>
+              <p class="panel-subtitle">Marks achieved across semester course disciplines</p>
+            </div>
+            <span class="growth-velocity-badge">Top Discipline: Core CS</span>
+          </div>
+          <div class="chart-box" style="margin-top: 1rem;">
+            <canvas id="chart-subject-growth"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="cohort-bottom-grid">
+        <div class="glass-panel">
+          <h3 class="panel-title"><span>🏆</span> Milestone Badges & Academic Honors</h3>
+          <p class="panel-subtitle">Recognitions unlocked through consistent semester performance</p>
+          <div id="res-growth-milestones" class="milestones-grid">
+            <!-- Dynamically populated from API -->
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <h3 class="panel-title"><span>🧭</span> Placement Strategic Recommendations</h3>
+          <p class="panel-subtitle">Tailored action plan for high-impact campus interview placement</p>
+          <div id="res-growth-recs" style="margin-top: 1.1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+            <!-- Dynamically populated from API -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: 8-Semester Consolidated Transcript Ledger -->
+    <section id="tab-records" class="tab-content">
+      <!-- Marks Summary Ribbon -->
+      <div class="marks-summary-ribbon">
+        <div class="marks-stat-item">
+          <span class="lbl">Cumulative Avg CGPA</span>
+          <span id="marks-stat-avg" class="val">9.20 / 10.0</span>
+        </div>
+        <div class="marks-stat-item">
+          <span class="lbl">Placement Verdict</span>
+          <span id="marks-stat-high-low" class="val" style="color: #059669;">🟢 Green Light (Eligible)</span>
+        </div>
+        <div class="marks-stat-item">
+          <span class="lbl">Total Active Arrears</span>
+          <span id="marks-stat-pass-rate" class="val">0 Backlogs</span>
+        </div>
+        <div class="marks-stat-item">
+          <span class="lbl">Total Evaluated</span>
+          <span id="marks-stat-passed-failed" class="val">8 Semesters (160 Cr)</span>
+        </div>
+      </div>
+
+      <div class="glass-panel">
+        <div class="roster-controls">
+          <div class="search-box">
+            <span>🔍</span>
+            <input id="marks-search" type="text" placeholder="Search semesters or courses (e.g. 'Semester 1', 'Algorithms')...">
+          </div>
+
+          <div style="display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;">
+            <div class="filter-group">
+              <label style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Status:</label>
+              <select id="marks-filter-status" class="filter-select">
+                <option value="all">All Semesters</option>
+                <option value="PASS">Cleared Semesters Only</option>
+                <option value="FAIL">Semesters with Arrears</option>
+              </select>
+            </div>
+
+            <button id="btn-marks-add-new" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+              <span>📄</span> View Full Transcript Modal
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="roster-table marks-table">
+            <thead>
+              <tr>
+                <th>Semester</th>
+                <th>Courses</th>
+                <th>Total Marks</th>
+                <th>Percentage</th>
+                <th>Individual SGPA (/10.0)</th>
+                <th>Credits Earned</th>
+                <th>Backlogs</th>
+                <th>Semester Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="semesters-ledger-tbody">
+              <!-- Dynamically populated from all 8 semesters data -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: API Live Console & Telemetry -->
+    <section id="tab-console" class="tab-content">
+      <div class="glass-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title"><span>🔌</span> Live API Telemetry & Payload Inspector</h2>
+            <p class="panel-subtitle">Demonstrates real-time REST API interaction between frontend client and FastAPI backend</p>
+          </div>
+          <div class="console-meta">
+            <span id="console-endpoint" class="method-tag post">POST /api/analyze</span>
+            <span id="console-status" style="color: #059669; font-weight: 700;">200 OK</span>
+            <span id="console-latency">-- ms</span>
+          </div>
+        </div>
+
+        <div class="api-console-grid">
+          <div>
+            <div class="console-header">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">Request Payload (JSON)</span>
+              <span class="method-tag post">POST</span>
+            </div>
+            <pre id="console-req-json" class="code-block">// Waiting for API request...</pre>
+          </div>
+
+          <div>
+            <div class="console-header">
+              <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">Backend Response Payload (JSON)</span>
+              <span style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted);">Content-Type: application/json</span>
+            </div>
+            <pre id="console-res-json" class="code-block">// Waiting for API response...</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Official Report Card Modal Dialog -->
+  <div id="modal-report-card" class="modal-overlay">
+    <div class="modal-card report-card-modal">
+      <div class="report-card-header">
+        <div class="report-institution">
+          <div class="report-emblem">✦</div>
+          <div>
+            <h3>EduGrowth Academy</h3>
+            <p>Official Academic Transcript & Progress Report Card</p>
+          </div>
+        </div>
+        <button id="btn-close-report-modal" class="btn-close">&times;</button>
+      </div>
+
+      <div id="report-card-content" class="report-card-body">
+        <!-- Dynamically rendered report card -->
+      </div>
+
+      <div class="report-card-actions">
+        <button id="btn-print-report" class="btn-primary">
+          <span>🖨️</span> Print / Save PDF
+        </button>
+        <button id="btn-dismiss-report" class="btn-ghost">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enter / Edit Marks Modal Dialog -->
+  <div id="modal-enter-marks" class="modal-overlay">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <h3 style="font-family: var(--font-display); font-size: 1.25rem;">📝 Log Examination Marks</h3>
+        <button id="btn-close-marks-modal" class="btn-close">&times;</button>
+      </div>
+
+      <form id="form-enter-marks" style="display: flex; flex-direction: column; gap: 1.1rem;">
+        <!-- Hidden inputs maintaining complete API compatibility -->
+        <input id="em-name" type="hidden" value="Student Profile">
+        <input id="em-roll" type="hidden" value="STU-2026">
+
+        <div class="student-profile-banner" style="margin-bottom: 0.2rem; padding: 0.75rem 1rem;">
+          <div class="sp-avatar" style="width: 38px; height: 38px; font-size: 1.15rem;">📝</div>
+          <div class="sp-details">
+            <div class="sp-title" style="font-size: 0.92rem;">Log New Evaluation Term to My Record</div>
+            <div class="sp-sub" style="font-size: 0.78rem;">Student ID: <strong>STU-2026</strong> &nbsp;•&nbsp; Class: <strong>Grade 10-A</strong></div>
+          </div>
+          <span class="sp-badge">Personal Ledger</span>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label for="em-class">Grade / Class</label>
+            <input id="em-class" type="text" class="text-input" value="Grade 10-A" required>
+          </div>
+          <div class="form-group">
+            <label for="em-term">Evaluation Term</label>
+            <input id="em-term" type="text" class="text-input" value="Term 5 · Upcoming Exam" required>
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: 12px; padding: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+            <label style="font-weight: 700; color: #4338ca; font-size: 0.88rem;">Subject Marks (Out of 100 Each)</label>
+            <div style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-secondary);">
+              Total: <span id="em-live-total" style="color: #0284c7; font-weight: 700;">447</span>/500 (<span id="em-live-pct" style="color: #059669; font-weight: 700;">89.4%</span>)
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.6rem;">
+            <div class="form-group">
+              <label for="em-math" style="font-size: 0.76rem;">Math</label>
+              <input id="em-math" type="number" min="0" max="100" step="0.5" class="text-input em-subject-calc" value="88" required>
+            </div>
+            <div class="form-group">
+              <label for="em-sci" style="font-size: 0.76rem;">Science</label>
+              <input id="em-sci" type="number" min="0" max="100" step="0.5" class="text-input em-subject-calc" value="86" required>
+            </div>
+            <div class="form-group">
+              <label for="em-eng" style="font-size: 0.76rem;">English</label>
+              <input id="em-eng" type="number" min="0" max="100" step="0.5" class="text-input em-subject-calc" value="92" required>
+            </div>
+            <div class="form-group">
+              <label for="em-soc" style="font-size: 0.76rem;">Social</label>
+              <input id="em-soc" type="number" min="0" max="100" step="0.5" class="text-input em-subject-calc" value="85" required>
+            </div>
+            <div class="form-group">
+              <label for="em-cs" style="font-size: 0.76rem;">Computer</label>
+              <input id="em-cs" type="number" min="0" max="100" step="0.5" class="text-input em-subject-calc" value="96" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="form-group">
+            <label for="em-att">Attendance (%)</label>
+            <input id="em-att" type="number" min="0" max="100" step="0.5" class="text-input" value="94" required>
+          </div>
+          <div class="form-group">
+            <label for="em-study">Study (hrs/wk)</label>
+            <input id="em-study" type="number" min="0" max="50" step="0.5" class="text-input" value="13.5" required>
+          </div>
+          <div class="form-group">
+            <label for="em-asg">Assignment (%)</label>
+            <input id="em-asg" type="number" min="0" max="100" step="0.5" class="text-input" value="92" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="em-remarks">Self-Reflection or Educator Remarks</label>
+          <input id="em-remarks" type="text" class="text-input" placeholder="e.g. Focused preparation in STEM; improved analytical speed.">
+        </div>
+
+        <div style="display: flex; gap: 0.8rem; margin-top: 0.5rem;">
+          <button type="submit" class="btn-primary" style="flex: 1; justify-content: center;">
+            <span>💾</span> Save Assessment & Update Growth Trajectory
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/charts.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
